@@ -20,14 +20,54 @@ def read_data(f_l=FILE_LOCATION):
 
     df = pd.read_csv(f_l, sep=' ', names=headers)
 
+    #convert data set boolean to conventional 0, 1
+    df['heart_disease'].replace({1: 0, 2: 1}, inplace=True)
+
     #checks if there are any null values in data
     if df.isnull().sum().any():
         logging.error('Missing some values in data')
 
-
+    #checks if all data is numeric
     if not df.shape[1] == df.select_dtypes(include=np.number).shape[1]:
-        print('dgf')
+        logging.error('Some data is not numeric')
+
     return df
 
 
-read_data()
+def train_test_split(df, test_size=0.2, shuffle=True, ):
+    '''This takes in a data set, and returns it split into training 
+    and testing data aswell as feature and target split.
+
+    test_size - the perecent of data to be used for testing
+    shuffle - whether or not to shuffle data before splitting'''
+    if test_size > 1 or test_size < 0:
+        logging.error('Test size is not valid')
+
+    if shuffle:
+        df = df.sample(frac=1).reset_index(drop=True)
+
+    num_row_test = round(len(df)*test_size)
+
+    test_data = df.iloc[:num_row_test,:]
+    train_data = df.iloc[num_row_test:,:]
+
+    x_test, y_test = split_data(test_data)
+    x_train, y_train = split_data(train_data)
+
+    return(x_test.shape, y_test.shape, x_train.shape, y_train.shape)
+
+
+
+def split_data(df):
+    '''This takes in a data frame and splits the target from the feature
+    returning two variables'''
+
+    x_data = df.drop(columns=['heart_disease'])
+
+    y_data = df['heart_disease']
+
+    return(x_data, y_data)
+
+
+
+print(train_test_split(read_data(FILE_LOCATION)))
