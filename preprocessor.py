@@ -17,7 +17,6 @@ def read_data(f_l=FILE_LOCATION):
         'max_heart_rate_achieved', 'exercise_induced_angina', 'oldpeak',"slope_of_peak",
         'num_of_major_vessels','thal', 'heart_disease']
 
-
     df = pd.read_csv(f_l, sep=' ', names=headers)
 
     #convert data set boolean to conventional 0, 1
@@ -48,14 +47,13 @@ def train_test_split(df, test_size=0.2, shuffle=True, ):
 
     num_row_test = round(len(df)*test_size)
 
-    test_data = df.iloc[:num_row_test,:]
-    train_data = df.iloc[num_row_test:,:]
+    test_data = df.iloc[:num_row_test,:].reset_index(drop=True)
+    train_data = df.iloc[num_row_test:,:].reset_index(drop=True)
 
     x_test, y_test = split_data(test_data)
     x_train, y_train = split_data(train_data)
 
-    return(x_test.shape, y_test.shape, x_train.shape, y_train.shape)
-
+    return(x_test, y_test, x_train, y_train)
 
 
 def split_data(df):
@@ -69,5 +67,35 @@ def split_data(df):
     return(x_data, y_data)
 
 
+class Standardizer:
+    '''This class is used to normalize the data'''
+    mean = None
+    std = None
 
-print(train_test_split(read_data(FILE_LOCATION)))
+    def fit(self, df):
+        '''this method finds the mean and std of each column given'''
+        self.mean = df.mean()
+        self.std = df. std()
+
+    def transform(self, df):
+        '''This normalizes the inputed data using the already defined
+        mean and std'''
+
+        norm_df = (df-self.mean)/self.std
+
+        return norm_df
+
+
+def main():
+
+    df = read_data()
+    x_test, y_test, x_train, y_train = train_test_split(df)
+
+    stdzr = Standardizer()
+    stdzr.fit(x_train)
+    x_train = stdzr.transform(x_train)
+    x_test = stdzr.transform(x_test)
+
+    return(x_test, y_test, x_train, y_train)
+
+main()
