@@ -105,18 +105,25 @@ class Layer():
     '''repersents a layer in the neural network, where you can pass in the activation function used
     the input and output size'''
 
-    def __init__(self, act_func=relu):
+    def __init__(self, input_size, num_neurons, act_func=relu):
         self.act_func = act_func
         self.d_act_func = get_d_func(self.act_func)
+        self.input_size = input_size
+        self.num_neurons = num_neurons
+
+        self.bias = np.zeros(self.num_neurons)
+        self.weights = np.random.rand(self.input_size, self.num_neurons) - 0.5
 
 
-    def forw_prop():
-        #todo 
-        return None
+    def forw_pass(self, x):
+        '''This peforms a pass through the function given the input data  x'''
+
+        x = x.dot(self.weights) + self.bias
+        
 
     def back_prop():
         #todo
         return None
 
-l = Layer(relu)
-print(l.d_act_func(0.1))
+l = Layer(13, 8)
+print(l.weights)
