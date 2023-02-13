@@ -11,12 +11,20 @@ class NeuralNetwork():
     def log_loss_function(self, y_pred, y_targ):
         '''This calculates loss using the logarithmic loss function
         aka the cross-entropy loss function'''
-        
-        if y_pred > 0.99999999:
-            y_pred = 0.99999999
-        if y_pred < 0.00000001:
-            y_pred 
-    
+
+        y_pred = min(y_pred, 0.99999999)
+        y_pred = max(y_pred, 0.00000001)
+
+        loss = -(y_targ * np.log(y_pred) + (1 - y_targ) * np.log(1 - y_pred))
+
+        return loss
+
+    def squareed_loss(self, y_pred, y_targ):
+        '''squared loss function'''
+
+        loss = (y_targ - y_pred)**2
+
+        return loss
 
 def relu(z):
     '''ReLU function'''
@@ -27,7 +35,7 @@ def d_relu(z):
     '''Derivative of ReLU function'''
 
     if z > 0:
-         return 1
+        return 1
 
     return 0
 
@@ -111,6 +119,7 @@ class Layer():
         self.input_size = input_size
         self.num_neurons = num_neurons
 
+
         self.bias = np.zeros(self.num_neurons)
         self.weights = np.random.rand(self.input_size, self.num_neurons) - 0.5
 
@@ -118,12 +127,27 @@ class Layer():
     def forw_pass(self, x):
         '''This peforms a pass through the function given the input data  x'''
 
-        x = x.dot(self.weights) + self.bias
+        self.input = x
+ 
+        x = np.dot(x, self.weights) + self.bias
+
+        self.output = self.act_func(x)
+        return self.output
         
 
-    def back_prop():
-        #todo
+    def back_prop(self, prev_delta, lr):
+        '''This peforms the back propergation'''
+
+        error = prev_delta.dot(self.weights.T)
+        delta = error * self.d_act_func(self.output)
+
+        weights_gradient = np.atleast_2d()
+
+        
+
         return None
 
-l = Layer(13, 8)
-print(l.weights)
+l = Layer(8, 1, relu)
+a = np.array([0.5,-0.5,0.5,-0.5,0.7,-0.5,0.5,-0.5])
+l.forw_pass(np.asmatrix(a))
+print(l.back_prop(np.array([0.3]), 0.1))
