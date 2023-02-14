@@ -4,10 +4,7 @@ import logging
 import pandas as pd
 import numpy as np
 
-FILE_LOCATION = 'heart.dat'
-
-
-def read_data(f_l=FILE_LOCATION):
+def read_data(f_l):
     '''This function takes in the location of the data, and opens the data
     labeling all the columns. It also checks that there is no missing data
     and that all data is numeric as needed for a NN'''
@@ -18,18 +15,19 @@ def read_data(f_l=FILE_LOCATION):
         'num_of_major_vessels','thal', 'heart_disease']
 
     df = pd.read_csv(f_l, sep=' ', names=headers)
+    logging.info('read file')
 
     #convert data set boolean to conventional 0, 1
     df['heart_disease'].replace({1: 0, 2: 1}, inplace=True)
 
     #checks if there are any null values in data
     if df.isnull().sum().any():
-        logging.error('Missing some values in data')
+        logging.warn('Missing some values in data')
 
     #checks if all data is numeric
     if not df.shape[1] == df.select_dtypes(include=np.number).shape[1]:
-        logging.error('Some data is not numeric')
-
+        logging.warn('Some data is not numeric')
+    
     return df
 
 
@@ -53,6 +51,8 @@ def train_test_split(df, test_size=0.2, shuffle=True, ):
     x_test, y_test = split_data(test_data)
     x_train, y_train = split_data(train_data)
 
+    logging.info('split data into training and testing, and feature and target')
+
     return(x_test, y_test, x_train, y_train)
 
 
@@ -63,7 +63,7 @@ def split_data(df):
     x_data = df.drop(columns=['heart_disease'])
 
     y_data = df['heart_disease']
-
+    
     return(x_data, y_data)
 
 
@@ -86,16 +86,23 @@ class Standardizer:
         return norm_df
 
 
-def main():
+def process_data(file_location):
+    '''Brings all the methods together to return the normalized and
+    seperated data from the file location specified'''
 
-    df = read_data()
+    df = read_data(file_location)
     x_test, y_test, x_train, y_train = train_test_split(df)
 
     stdzr = Standardizer()
     stdzr.fit(x_train)
+    logging.info('computed mean and std of traning features')
     x_train = stdzr.transform(x_train)
     x_test = stdzr.transform(x_test)
+    logging.info('Transformed features of traning and testing features')
 
-    return(x_test, y_test, x_train, y_train)
+    logging.info('processed data')
+    return(x_test.to_numpy(), y_test.to_numpy(), x_train.to_numpy(), y_train.to_numpy())
 
-main()
+x_test, y_test, x_train, y_train = process_data('heart.dat')
+
+print(x_test)
