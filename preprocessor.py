@@ -102,7 +102,4 @@ def process_data(file_location):
 
     logging.info('processed data')
     return(x_test.to_numpy(), y_test.to_numpy(), x_train.to_numpy(), y_train.to_numpy())
-
-x_test, y_test, x_train, y_train = process_data('heart.dat')
-
-print(x_test)
+    

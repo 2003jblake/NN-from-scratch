@@ -5,86 +5,37 @@ import logging
 import numpy as np
 import preprocessor as p
 
-class NeuralNetwork():
-    '''This class defines all methods and function used in creating, training and predicting a neural network'''
 
-    def __init__(self, x_test, y_test, x_train, y_train):
-        self.layers = []
-        self.x_test = x_test
-        self.y_test = y_test
-        self.x_train = x_train
-        self.y_train = y_train
+def log_loss_function(y_pred, y_targ):
+    '''This calculates loss using the logarithmic loss function
+    aka the cross-entropy loss function'''
+
+    y_pred = min(y_pred, 0.99999999)
+    y_pred = max(y_pred, 0.00000001)
+
+    loss = -(y_targ * np.log(y_pred) + (1 - y_targ) * np.log(1 - y_pred))
+
+    return loss
+
+def d_log_loss_function(y_pred, y_targ):
+    '''The derivative of the logarithmic loss function'''
+
+    d_loss = y_targ 
 
 
+def squared_loss(y_pred, y_targ):
+    '''squared loss function'''
 
-    def log_loss_function(self, y_pred, y_targ):
-        '''This calculates loss using the logarithmic loss function
-        aka the cross-entropy loss function'''
+    d_loss = (y_targ - y_pred)**2
 
-        y_pred = min(y_pred, 0.99999999)
-        y_pred = max(y_pred, 0.00000001)
+    return d_loss
 
-        loss = -(y_targ * np.log(y_pred) + (1 - y_targ) * np.log(1 - y_pred))
+def d_squared_loss(y_pred, y_targ):
+    '''The derivative of the squared loss function'''
 
-        return loss
+    loss = 2*(y_pred - y_targ)
 
-    def log_loss_function(self, y_pred, y_targ):
-        '''The derivative of the logarithmic loss function'''
-
-        d_loss = y_targ 
-
-    def squared_loss(self, y_pred, y_targ):
-        '''squared loss function'''
-
-        d_loss = (y_targ - y_pred)**2
-
-        return d_loss
-
-    def d_squared_loss(self, y_pred, y_targ):
-        '''The derivative of the squared loss function'''
-
-        loss = 2*(y_pred - y_targ)
-
-        return loss
-
-    def add_layer(self, layer):
-        self.layers.append(layer)
-    
-
-    def train(self):
-
-        num_rows, _ = self.x_train.shape
-
-        for i in range(num_rows):
-
-            features = self.x_train[i]
-
-            for j in range(len(self.layers)):
-                features = self.layers[j].forw_pass(features)
-
-            delta = self.d_squared_loss(features, self.y_train[i])    
-
-            for j in range(len(self.layers) - 1):
-                
-                L = self.layers[len(self.layers)-1 - j]
-                delta = L.back_prop(delta)
-
-            
-    def predict(self):
-        x = 0
-        num_rows, _ = self.x_test.shape
-        for i in range(num_rows):
-
-            features = self.x_test[i]
-
-            for j in range(len(self.layers)):
-                features = self.layers[j].forw_pass(features)
-            print(features)
-            if round(features[0,0]) == self.y_test[i]:
-                x += 1
-
-        print(x)
-
+    return loss
 
 def relu(z):
     '''ReLU function'''
@@ -152,7 +103,8 @@ def d_tanh(z):
 
     return 1 - tanh(z)**2
 
-def get_d_func(a_f):
+
+def get_d_act_func(a_f):
     '''Gets the corresponding derivative of the activation function passed in'''
 
     if a_f is relu:
@@ -166,8 +118,21 @@ def get_d_func(a_f):
     if a_f is tanh:
         return d_tanh
 
-    logging.error('could not return corresponding derivative function')
+    logging.error('could not return corresponding derivative of activation function')
     return None
+
+def get_d_loss_func(l_f):
+    '''gets the corresponding derivative of the loss function passed in'''
+
+    if l_f is squared_loss:
+        return d_squared_loss
+    if l_f is log_loss_function:
+        return d_log_loss_function
+
+    logging.error('could not return corresponding derivative of loss function')
+    return None
+
+
 
 class Layer():
     '''repersents a layer in the neural network, where you can pass in the activation function used
@@ -175,7 +140,7 @@ class Layer():
 
     def __init__(self, input_size, num_neurons, act_func=relu):
         self.act_func = np.vectorize(act_func)
-        self.d_act_func = np.vectorize(get_d_func(act_func))
+        self.d_act_func = np.vectorize(get_d_act_func(act_func))
         self.input_size = input_size
         self.num_neurons = num_neurons
 
@@ -185,7 +150,8 @@ class Layer():
 
 
     def forw_pass(self, x):
-        '''This peforms a pass through the function given the input data  x'''
+        '''This peforms a forward pass through the function given the input data  x
+        returns the activation of each neuron in the layer'''
 
         self.input = x
         x = np.dot(x, self.weights) + self.bias
@@ -195,12 +161,12 @@ class Layer():
         return self.act_func(x)
  
 
-    def back_prop(self, prev_delta, lr=0.1):
-        '''This peforms the back propergation, takes, in the delta of previous
-         returns the delta of the current layer, and updates weights and biases'''
+    def back_pass(self, prev_delta, lr=0.1):
+        '''This peforms  single back pass of a layer, takes in the delta of  the previous
+        layer and returns the delta, updates weights and biases of the current layer'''
 
 
-        error = prev_delta.dot(self.d_act_func(self.output))
+        error = prev_delta * (self.d_act_func(self.output))
 
         weights_grad = (self.input.T).dot(error)
 
@@ -209,22 +175,58 @@ class Layer():
 
         delta = ((self.input.T).dot(error)).sum()
 
-        #return delta
+        return delta
 
-'''
-l = Layer(2, 3, relu)
-a = np.array([0.5,-0.7])
 
-l.forw_pass(np.matrix(a))
-l.back_prop(np.matrix([0.3]), 0.1)
-'''
 
-X_test, y_test, x_train, y_train = p.process_data('heart.dat')
-n = NeuralNetwork(X_test, y_test, x_train, y_train)
-l1 = Layer(13, 8)
-l2 = Layer(8, 1, sigmoid)
+class NeuralNetwork():
+    '''This class defines all methods and function used in creating, training and predicting a neural network'''
 
-n.add_layer(l1)
-n.add_layer(l2)
-n.train()
-n.predict()
+    def __init__(self, loss_func=squared_loss):
+        self.layers = []
+        self.loss_func = loss_func
+        self.d_loss_func = get_d_loss_func(loss_func)
+
+
+    def add_layer(self, layer):
+        '''Adds a layer to the nerual network, adds it after all the previously added
+        layers'''
+        self.layers.append(layer)
+    
+
+    def train(self ,x_train, y_train):
+        '''Takes in training features, and training target, peforms forward and back propergation
+        to train the neural network'''
+
+        num_rows, _ = x_train.shape
+        for x in range(10):
+            for i in range(num_rows):
+
+                features = x_train[i]
+
+                for j in range(len(self.layers)):
+                    features = self.layers[j].forw_pass(features)
+
+                delta = self.d_loss_func(features, y_train[i])    
+
+                for j in range(len(self.layers) - 1):
+                    
+                    delta = self.layers[len(self.layers)-1 - j].back_pass(delta)
+
+            
+    def predict(self ,x_test, y_test):
+
+        x = 0
+
+        num_rows, _ = x_test.shape
+        for i in range(num_rows):
+
+            features = x_test[i]
+
+            for j in range(len(self.layers)):
+                features = self.layers[j].forw_pass(features)
+            
+            if round(features[0,0]) == y_test[i]:
+                x += 1
+
+        return(x)
