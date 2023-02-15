@@ -194,26 +194,37 @@ class NeuralNetwork():
         self.layers.append(layer)
     
 
+    def forw_prop(self, data_instance):
+        '''peforms forward propergation of the whole netowrk for a single training data instance'''
+        features = data_instance
+
+        for j in range(len(self.layers)):
+            features = self.layers[j].forw_pass(features)
+
+        return features
+
+
+    def back_prop(self, delta):
+        '''peforms back propergation of the whole network for a single training data instance'''
+        
+        for j in range(len(self.layers) - 1):
+            delta = self.layers[len(self.layers)-1 - j].back_pass(delta)
+
+
     def train(self ,x_train, y_train):
         '''Takes in training features, and training target, peforms forward and back propergation
         to train the neural network'''
 
         num_rows, _ = x_train.shape
+
         for x in range(10):
             for i in range(num_rows):
 
-                features = x_train[i]
+                pass_output = self.forw_prop(x_train[i])
+                delta = self.d_loss_func(pass_output, y_train[i])    
+                self.back_prop(delta)
 
-                for j in range(len(self.layers)):
-                    features = self.layers[j].forw_pass(features)
 
-                delta = self.d_loss_func(features, y_train[i])    
-
-                for j in range(len(self.layers) - 1):
-                    
-                    delta = self.layers[len(self.layers)-1 - j].back_pass(delta)
-
-            
     def predict(self ,x_test, y_test):
 
         x = 0
