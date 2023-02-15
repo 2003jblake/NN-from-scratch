@@ -182,7 +182,8 @@ class Layer():
 class NeuralNetwork():
     '''This class defines all methods and function used in creating, training and predicting a neural network'''
 
-    def __init__(self, loss_func=squared_loss):
+    def __init__(self, epoch=100, loss_func=squared_loss):
+        self.epoch = epoch
         self.layers = []
         self.loss_func = loss_func
         self.d_loss_func = get_d_loss_func(loss_func)
@@ -198,8 +199,8 @@ class NeuralNetwork():
         '''peforms forward propergation of the whole netowrk for a single training data instance'''
         features = data_instance
 
-        for j in range(len(self.layers)):
-            features = self.layers[j].forw_pass(features)
+        for layer in self.layers:
+            features = layer.forw_pass(features)
 
         return features
 
@@ -217,7 +218,7 @@ class NeuralNetwork():
 
         num_rows, _ = x_train.shape
 
-        for x in range(10):
+        for j in range(self.epoch):
             for i in range(num_rows):
 
                 pass_output = self.forw_prop(x_train[i])
